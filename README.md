@@ -44,9 +44,9 @@ These blocks are then stored in superblocks of size 8, with an FP16 scale and FP
 8 × 32 × 4.375 bits + 16 bits (scale) + 16 bits (minimum) = 1152 bits for 256 weights, resulting in exactly 4.5 bits per weight.
 
 #### K-Quant Variants
-- **Q4_K_S and Q4_K_M**: Built on top of Q4_K with minor adjustments, using Q5_K or Q6_K for some weights deemed more important. They also use F32 for some vectors, though vectors being 1-dimensional contribute little to overall model size.
+- **Q4_K_S and Q4_K_M**: Built on top of Q4_K with minor adjustments, using Q5_K or Q6_K for some layers that were found to be more important. They also use F32 for some vectors, though vectors being 1-dimensional contribute little to overall model size.
 
-- **Q4_K_L**: An experimental quantization suggested by ZeroWw that preserves additional precision for embedding and output weights by keeping them at Q8_0. Similar variants include Q6_K_L, Q5_K_L, and Q3_K_XL. The impact of these changes is still being studied.
+- **Q4_K_L**: An experimental quantization suggested by ZeroWw that preserves additional precision for embedding and output weights by keeping them at Q8_0. Similar variants include Q6_K_L, Q5_K_L, and Q3_K_XL. The impact of these changes is still unknown.
 
 ### 3. I-Quants
 I-quants take a fundamentally different approach that's more complex to describe. Instead of using a range of integer values, they employ lookup tables/arrays and store bits representing which index in the array to use for each weight.
