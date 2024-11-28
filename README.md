@@ -113,3 +113,11 @@ Imatrix improves quantization by considering weight importance:
    - Particularly effective with I-quants, helping choose optimal value mappings and sign flips
 
 This approach is especially valuable for IQ2 and similar formats where some weights must be modified (like sign flips) - the imatrix ensures these modifications happen to less important weights.
+
+## What's next
+
+- Tokenizer/chat template information
+- Very basic sampler settings (there are much better people than myself for these)
+- Other formats (exl2, AWQ, GPTQ, etc)
+- Base vs instruct tuning
+- More?
