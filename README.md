@@ -46,7 +46,7 @@ These blocks are then stored in superblocks of size 8, with an FP16 scale and FP
 #### K-Quant Variants
 - **Q4_K_S and Q4_K_M**: Built on top of Q4_K with minor adjustments, using Q5_K or Q6_K for some layers that were found to be more important. They also use F32 for some vectors, though vectors being 1-dimensional contribute little to overall model size.
 
-- **Q4_K_L**: An experimental quantization suggested by ZeroWw that preserves additional precision for embedding and output weights by keeping them at Q8_0. Similar variants include Q6_K_L, Q5_K_L, and Q3_K_XL. The impact of these changes is still unknown.
+- **Q4_K_L**: An experimental quantization suggested by ZeroWw that preserves additional precision for embedding and output weights by keeping them at Q8_0. Similar variants include Q6_K_L, Q5_K_L, and Q3_K_XL. The impact of these changes is still relatively unknown.
 
 ### 3. I-Quants
 I-quants take a fundamentally different approach that's more complex to describe. Instead of using a range of integer values, they employ lookup tables/arrays and store bits representing which index in the array to use for each weight.
@@ -57,7 +57,9 @@ These are similar to Q4_0 but use a non-linear mapping with blocks of 32. The no
 static const int8_t kvalues_iq4nl[16] = {-127, -104, -83, -65, -49, -35, -22, -10, 1, 13, 25, 38, 53, 69, 89, 113};
 ```
 
-This mapping was empirically determined to be more accurate. IQ4_XS incorporates K-quant concepts with super-blocks of 256 and 6-bit scales for blocks of 32 weights, generally providing better performance than IQ4_NL with fewer bits per weight.
+This mapping was found by ikawrakow as being a more accurate mapping for model typical model weights. Then, instead of quantizing the weight to 4 bits, the weights are replaced with 4 bit indices to this array.
+
+IQ4_XS incorporates K-quant concepts with super-blocks of 256 and 6-bit scales for blocks of 32 weights, generally providing better performance than IQ4_NL with fewer bits per weight.
 
 #### Advanced I-Quants: IQ1/IQ2/IQ3
 These quantization methods use lookup tables based on the E8 lattice's special properties. Here's how IQ2 works:
@@ -74,18 +76,22 @@ These quantization methods use lookup tables based on the E8 lattice's special p
 The implementation enforces an even number of positive vs negative values, sometimes flipping an "unimportant" weight to guarantee only 7 bits are needed for signs. The superblock calculations are optimized for parallel processing, particularly beneficial for CUDA/AVX implementations.
 
 ### 4. Q4_0_X_X Quantizations
-These quantizations were specifically designed for ARM architectures, storing data in interleaved groups of 4×4, 4×8, and 8×8 for efficient register usage.
+These quantizations were specifically designed for ARM architectures, storing data in interleaved groups of 4×4, 4×8, and 8×8 for efficient register usage. Basically what this means is that instead of having to load up each row of 4 values individually, ARM can more efficiently fill its registers by loading up multiple interweaved rows at the same time.
 
 #### Variants and Requirements:
 - **Q4_0_4_4**: Compatible with most ARM platforms
 - **Q4_0_4_8**: Requires i8mm (8-bit integer matrix multiplication) support
 - **Q4_0_8_8**: Requires Scalable Vector Extensions (SVE)
 
-These formats also benefit AVX2/AVX512 platforms but should be avoided on other platforms (including Apple, non-AVX2 CPUs, CUDA, and Vulkan) as they may decrease performance or fail to load.
+The Q4_0_8_8 format also benefits AVX2/AVX512 platforms, since they support 256 bit width registers. They should be avoided on other platforms (including Apple, non-AVX2 CPUs, CUDA, and Vulkan) as they may decrease performance or fail to load at all. This means if you don't have an ARM, server, or Zen5 CPU you should not use these quants.
 
 Performance comparisons and CPU compatibility can be checked at:
 - ARM speed comparisons: https://github.com/ggerganov/llama.cpp/pull/5780#pullrequestreview-21657544660
 - ARM CPU feature support: https://gpages.juszkiewicz.com.pl/arm-socs-table/arm-socs.html
+
+In particular, the X plus/elite chips in the latest Copilot PCs support i8mm meaning they can gain a nice improvement from Q4_0_4_8.
+
+Hopefully in the future we'll get memory interleaving at other bit rates, such as Q8_0_2_4.
 
 ## Advanced Concepts: Imatrix and Error Measurement
 
@@ -113,6 +119,8 @@ Imatrix improves quantization by considering weight importance:
    - Particularly effective with I-quants, helping choose optimal value mappings and sign flips
 
 This approach is especially valuable for IQ2 and similar formats where some weights must be modified (like sign flips) - the imatrix ensures these modifications happen to less important weights.
+
+Imatrix can also be calculated on a quantized model, because all that needs to be done is count how many times a weight is activated, and particularly at Q8, they should overall be so close to the original values that the minimal differences in activations would not affect the results in an impactful way. Additionally, Q8_0 does not use the importance matrix, explicitly disabling it before performing quantization.
 
 ## What's next
 
