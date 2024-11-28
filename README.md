@@ -116,7 +116,7 @@ Imatrix improves quantization by considering weight importance:
    - All weights maintain same quantization level
    - Important weights get more accurate dequantization
    - Only adds computation during quantization, not inference
-   - Particularly effective with I-quants, helping choose optimal value mappings and sign flips
+   - Particularly effective with I-quants, since the values are mapped to discrete hard coded values, it's helpful that the important weights be mapped most accurately so that they dequantize to their original values.
 
 This approach is especially valuable for IQ2 and similar formats where some weights must be modified (like sign flips) - the imatrix ensures these modifications happen to less important weights.
 
