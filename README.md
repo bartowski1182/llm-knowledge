@@ -1,7 +1,7 @@
-# Understanding Model Quantization: A Comprehensive Guide
+# My knowledge of language models
 
 ## Quick Overview
-Quantization is the process of reducing model parameter precision to decrease memory usage while maintaining quality. This guide covers the fundamentals and dives deep into various quantization techniques.
+Here I will document a bunch of my knowledge of language models so that it can be referenced in one central location. I will attempt to maintain and update this, please open an issue if there's anything specific you want added!
 
 ## Fundamentals of Quantization
 
