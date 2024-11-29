@@ -123,30 +123,36 @@ Then this array of messages is passed to the Jinja2 `chat_template` as defined i
 
 Now, I'll go through a couple examples of popular models.
 
+
+### Llama 3 chat template
 First, Llama 3 (not 3.1, since it got more complicated with tool use):
 
 ```
-{%- set loop_messages = messages -%}
-{%- for message in loop_messages -%}
-    {%- set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n' + 
-                      message['content'] | trim + 
-                      '<|eot_id|>' -%}
-    {%- if loop.index0 == 0 -%}
-        {%- set content = bos_token + content -%}
-    {%- endif -%}
-    {{- content -}}
-{%- endfor -%}
-
-{%- if add_generation_prompt -%}
-    {{- '<|start_header_id|>assistant<|end_header_id|>\n\n' -}}
-{%- endif -%}
+[1] {%- set loop_messages = messages -%}
+[2] {%- for message in loop_messages -%}
+[3]     {%- set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n' + 
+[4]                       message['content'] | trim + 
+[5]                       '<|eot_id|>' -%}
+[6]     {%- if loop.index0 == 0 -%}
+[7]         {%- set content = bos_token + content -%}
+[8]     {%- endif -%}
+[9]     {{- content -}}
+[10]{%- endfor -%}
+[11]{%- if add_generation_prompt -%}
+[12]    {{- '<|start_header_id|>assistant<|end_header_id|>\n\n' -}}
+[13]{%- endif -%}
 ```
+*Note: this has been formatted onto multiple lines for clarity but is defined in a single line in the `chat_template`*
 
 Okay so this still looks pretty complex, let's break it down.
 
-First, it's passed our array of messages and sets `loop_messages` to be equal to that (why? who knows, not important).
+First, it's passed our array of messages and sets `loop_messages` to be equal to that (why? who knows, not important)[1].
 
-Then, it loops through those messages. For each of them, it grabs the `message['role']` and wraps it with the special chat tokens we discussed earlier `<|start_header_id|>` and `<|end_header_id|>`. Then it pads the message content appropriately, first with `\n\n` and then ends it with `<|eot_id|>` to indicate that this message's "turn" has ended. Then, it's using a bit of logic to know that if it's the first message in the conversation, it should have the `bos_token` appended to it. In Llama 3's case, the `bos_token` is defined in the `tokenizer_config.json` file as `<|begin_of_text|>`. Then, after it has iterated through all the existing messages, it'll add the tokens necessary for the model to know that the assistant should be talking, in this case `<|start_header_id|>assistant<|end_header_id|>\n\n`. Note this is only if add_generation_prompt is true, but you can assume it's true for conversations.
+Next, it loops through those messages[2]. For each of them, it grabs the `message['role']` and wraps it with the special chat tokens we discussed earlier `<|start_header_id|>` and `<|end_header_id|>`[3]. Then it pads the message content[4] appropriately, first with `\n\n` and then ends it with `<|eot_id|>` to indicate that this message's "turn" has ended[5].
+
+Then, it's using a bit of logic to know that if it's the first message in the conversation, it should have the `bos_token` appended to it[6-8]. In Llama 3's case, the `bos_token` is defined in the `tokenizer_config.json` file as `<|begin_of_text|>`. 
+
+Finally, after it has iterated through all the existing messages, it'll add the tokens necessary for the model to know that the assistant should be talking, in this case `<|start_header_id|>assistant<|end_header_id|>\n\n`[12]. Note this is only if add_generation_prompt is true, but you can assume it's true for conversations.
 
 So what does this all look like given our earlier array of messages? Well, something like this:
 
@@ -169,40 +175,41 @@ This is how Llama 3 knows how to handle multi-turn conversations, each role and 
 
 Let's look at another example.
 
-Here's how Gemma 2's template looks:
+### Gemma 2 chat template
+Here's how Gemma 2's template looks (again on multiple lines for clarity):
 
 ```
-{{- bos_token -}}
-{%- if messages[0]['role'] == 'system' -%}
-    {{- raise_exception('System role not supported') -}}
-{%- endif -%}
-{%- for message in messages -%}
-    {%- if (message['role'] == 'user') != (loop.index0 % 2 == 0) -%}
-        {{- raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') -}}
-    {%- endif -%}
-    {%- if (message['role'] == 'assistant') -%}
-        {%- set role = 'model' -%}
-    {%- else -%}
-        {%- set role = message['role'] -%}
-    {%- endif -%}
-    {{- '<start_of_turn>' + role + '\n' + 
-        message['content'] | trim + 
-        '<end_of_turn>\n' -}}
-{%- endfor -%}
-{%- if add_generation_prompt -%}
-    {{- '<start_of_turn>model\n' -}}
-{%- endif -%}
+[1] {{- bos_token -}}
+[2] {%- if messages[0]['role'] == 'system' -%}
+[3]     {{- raise_exception('System role not supported') -}}
+[4] {%- endif -%}
+[5] {%- for message in messages -%}
+[6]     {%- if (message['role'] == 'user') != (loop.index0 % 2 == 0) -%}
+[7]         {{- raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') -}}
+[8]     {%- endif -%}
+[9]     {%- if (message['role'] == 'assistant') -%}
+[10]        {%- set role = 'model' -%}
+[11]    {%- else -%}
+[12]        {%- set role = message['role'] -%}
+[13]    {%- endif -%}
+[14]    {{- '<start_of_turn>' + role + '\n' + 
+[15]        message['content'] | trim + 
+[16]        '<end_of_turn>\n' -}}
+[17]{%- endfor -%}
+[18]{%- if add_generation_prompt -%}
+[19]    {{- '<start_of_turn>model\n' -}}
+[20]{%- endif -%}
 ```
 
 Let's break this down..
 
-First is the bos_token, once again this is defined in the same `tokenizer_config.json` file, but unlike Llama 3's `<|begin_of_text|>`, it's defined as `<bos>`. This is irrelevant at the end of the day, as the model just sees the ID of the token that's relevant.
+First is the bos_token[1], once again this is defined in the same `tokenizer_config.json` file, but unlike Llama 3's `<|begin_of_text|>`, it's defined as `<bos>`. This is irrelevant at the end of the day, as the model just sees the ID of the token that's relevant, but it's interesting to note.
 
-Next, it has a special exception. The Gemma 2 models were *not* trained on a system message, and so the Jinja2 template has an exception that, if the first message's role is `system`, it will break. Tools can get around this, and overall Gemma 2 will still loosely understand the concept of a system token just by being intelligent and able to follow patterns, but it's important to note that it's not trained to handle them, and this chat_template tells us about the intention of the model creators.
+Next, it has a special exception[3]. The Gemma 2 models were *not* trained on a system message, and so the Jinja2 template has an exception that, if the first message's role is `system`[2], it will break. Inference engines can get around this, and overall Gemma 2 will still loosely understand the concept of a system token just by being intelligent and able to follow patterns, but it's important to note that it's not trained to handle them, and this chat_template tells us about the intention of the model creators.
 
-Next, it goes through a similar loop as Llama 3, but with its own special rule that forces the roles to alternate between `user` and `assistant`. This is again something that the model would likely be fine to not need, but placing it in the chat template does a good job of ensuring that users are prompting the model in the highest quality way possible. It similarly remaps the role `assistant` to the role `model`, likely because convention is to call the model `assistant`, but this was trained to be prompted as `model`.
+Then, it goes through a similar loop[5] as Llama 3, but with its own special rule that forces the roles to alternate between `user` and `assistant`[6-7]. This is again something that the model would likely be fine to not need, but placing it in the chat template does a good job of ensuring that users are prompting the model in the highest quality way possible. It similarly remaps the role `assistant` to the role `model`[9-10], likely because convention is to call the model `assistant`, but this was trained to be prompted as `model`.
 
-Then, it goes and does the same wrapping, adding `<start_of_turn>` and `<end_of_turn>` around the roles and message content, and ends it with `<start_of_turn>model\n` so the model knows to to generate as.. well, itself I suppose.
+Finally, it goes and does the same wrapping, adding `<start_of_turn>` and `<end_of_turn>` around the roles and message content[14-16], and ends it with `<start_of_turn>model\n`[19] so the model knows to to generate as.. well, itself I suppose.
 
 Let's use the earlier array of messages again (without the system message of course):
 
@@ -218,3 +225,36 @@ I'm good thanks, you?<end_of_turn>
 ```
 
 And then the model would continue generating from there! You can see once again we end up with a nice structure indicating who sent which message, and ending it with the tokens that Gemma would be used to seeing before needing to start its generation.
+
+
+### Mistral chat template
+Lastly, lets take a look at Mistral's chat template, since they do things differently:
+
+```
+[1] {{ bos_token }}
+[2] {% for message in messages %}
+[3]     {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+[4]         {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+[5]     {% endif %}
+[6]     {% if message['role'] == 'user' %}
+[7]         {{ ' [INST] ' + message['content'] + ' [/INST]' }}
+[8]     {% elif message['role'] == 'assistant' %}
+[9]         {{ ' ' + message['content'] + eos_token }}
+[10]    {% else %}
+[11]        {{ raise_exception('Only user and assistant roles are supported!') }}
+[12]    {% endif %}
+[13]{% endfor %}
+```
+*Note: this is an older template before they supported tool use and system prompts*
+
+We see some similarities, like starting with the `bos_token`[1], and then looping through the messages[2]. We see the same exception as Gemma that ensures the conversation flows back and forth from user to assistant and back [4].
+
+However, unlike the previous templates, we don't get the same kind of role wrapping. Instead, we see these two tokens: `[INST]` and `[/INST]`, and the user message simply gets placed between them (with some space padding)[7]! Then, when the model sees `[/INST]`, it knows that represents the "assistant" response, and that it should end with the `eos_token`[9].
+
+So what does our earlier message array (again, without the system prompt) look like with this?
+
+```
+<s> [INST] Hi [/INST] Hey! How are you?</s> [INST] I'm good thanks, you? [/INST]
+```
+
+And so the model will continue generating after seeing `[/INST]`, until it's done and then will again output `</s>`, which an inference tool will recognize as the assistant's `EOS` token and stop the generation.
