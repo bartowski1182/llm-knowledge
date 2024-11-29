@@ -93,6 +93,12 @@ In particular, the X plus/elite chips in the latest Copilot PCs support i8mm mea
 
 Hopefully in the future we'll get memory interleaving at other bit rates, such as Q8_0_2_4.
 
+Note: These specific quants may be irrelevant thanks to on-the-fly repacking efforts made [here](https://github.com/ggerganov/llama.cpp/pull/9921).
+
+These changes make it so that, when using AVX or ARM, your best bet is actually to grab Q4_0 and let the runtime handle the repacking of weights based on your CPU's supported instructions.
+
+Additionally, IQ4_NL will be an option for repacking thanks to efforts made [here](https://github.com/ggerganov/llama.cpp/pull/10541), so with slightly lower speeds but a good bump to quality, you now have more options for running these models!
+
 ## Advanced Concepts: Imatrix and Error Measurement
 
 Next I want to cover imatrix and its function/purpose. First, it's best to understand quantization errors, since this is what imatrix attempts to optimize.
