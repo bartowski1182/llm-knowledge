@@ -95,19 +95,23 @@ Hopefully in the future we'll get memory interleaving at other bit rates, such a
 
 ## Advanced Concepts: Imatrix and Error Measurement
 
+Next I want to cover imatrix and its function/purpose. First, it's best to understand quantization errors, since this is what imatrix attempts to optimize.
+
 ### Understanding Quantization Errors
 When a weight is quantized, the "error" is measured as the difference between the original and dequantized value. For example:
 - Original value: 0.7423
 - Dequantized value: 0.8000
 - Absolute error: 0.0577
 
-Traditional quantization attempts to minimize these errors evenly across all weights.
+Traditional quantization attempts to minimize these errors evenly across all weights. So when selecting a scale for a given block, the weights will all be quantized and dequantized and their total error measured. This is attempted with multiple scales, and the one that yields the smallest overall error is used.
+
+This is fine both in theory and in practice, it results in overall the entire model being quantized with as little error as possible. However, there's another aspect to consider. During inference, not all weights are equal, there are many that just straight up do not contribute to the final result, and there are those that are constantly being triggered and contribute massively to the results. If we quantize for minimum overall error, we may end up making particularly important weights less accurate while maintaining accuracy of weights that don't participate at all. To combat this, imatrix was implemented.
 
 ### Imatrix Enhancement
-Imatrix improves quantization by considering weight importance:
+Imatrix improves quantization by considering weight importance. In this way, instead of just reducing the errors across all weights evenly, the errors are affected by how important a weight is. So if we have a medium error on a very important weight, this will be worse than a large error on a useless weight, so we'd rather try to reduce the error on the important weight while sacrificing a bit of error on less important weights.
 
 1. Process:
-   - Feed text corpus through the original model (or quantized version)
+   - Feed text corpus through the original model
    - Count each weight's contribution to final results
    - Store results in the "importance matrix" (imatrix)
    - Weight errors based on importance during quantization
@@ -120,7 +124,9 @@ Imatrix improves quantization by considering weight importance:
 
 This approach is especially valuable for IQ2 and similar formats where some weights must be modified (like sign flips) - the imatrix ensures these modifications happen to less important weights.
 
-Imatrix can also be calculated on a quantized model, because all that needs to be done is count how many times a weight is activated, and particularly at Q8, they should overall be so close to the original values that the minimal differences in activations would not affect the results in an impactful way. Additionally, Q8_0 does not use the importance matrix, explicitly disabling it before performing quantization.
+Imatrix can also be calculated on a quantized model as well, because all that needs to be done is count how many times a weight is activated, and particularly at Q8, they should overall be so close to the original values that the minimal differences in activations would not affect the results in an impactful way. Additionally, Q8_0 does not use the importance matrix, explicitly disabling it before performing quantization.
+
+The important thing is that the imatrix dataset be reasonably diverse and attempt to activate weights across the model in a realistic way. The interesting thing is that this doesn't seem to have negative consequences for data outside of the imatrix's calibration text, when calibrated on my dataset (found here: https://gist.github.com/bartowski1182/eb213dccb3571f863da82e99418f81e8), which contains 0 Japanese characters, the perplexity against a purely Japanese wiki exclusively improved when using imatrix. This seems to suggest that at least a good amount of important weights are always important, no matter the language or task, and maintaining their accuracy is a net benefit to the results of the model.
 
 ## What's next
 
