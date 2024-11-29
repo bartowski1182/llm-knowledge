@@ -18,7 +18,7 @@ Importantly, a tokenizer does 2 major things. It first chunks the sentences and 
 
 For example, the sentence `The quick brown fox jumped over the lazy dog.` would tokenize in Llama 3 like so:
 
-<span style="background-color: yellow;">The</span><span style="background-color: red;"> quick</span><span style="background-color: lightblue;"> brown</span><span style="background-color: lightgreen;"> fox</span><span style="background-color: orange;"> jumped</span><span style="background-color: yellow;"> over</span><span style="background-color: red;"> the</span><span style="background-color: lightblue;"> lazy</span><span style="background-color: lightgreen;"> dog</span><span style="background-color: orange;">.</span>
+![image](https://github.com/user-attachments/assets/a5ca0403-fd68-405e-81a8-c7943afd48e3)
 
 The model ends up seeing this like an array of IDs, like so:
 
@@ -40,7 +40,7 @@ You can see an example of how a model recognizes the token by looking at the Lla
 
 If you attempt to tokenize `<|start_header_id|` without the final `>`, you'll see it chunks it into 6 distinct meaningless tokens:
 
-<span style="background-color: yellow;"><</span><span style="background-color: red;">|</span><span style="background-color: lightblue;">start</span><span style="background-color: lightgreen;">_header</span><span style="background-color: orange;">_id</span><span style="background-color: yellow;">|</span>
+![image](https://github.com/user-attachments/assets/e179254c-d4bb-4618-b2e8-93c1a210aa10)
 
 And as IDs:
 
@@ -48,7 +48,7 @@ And as IDs:
 
 But as soon as you add the final `>`, suddenly it recognizes that series of chatacters as a specific token that the model has been trained on:
 
-<span style="background-color: lightblue;"><|start_header_id|></span>
+![image](https://github.com/user-attachments/assets/d3dd9423-8d6f-4830-8cbe-0c99aa859a05)
 
 And tokenizes it to just one single ID: `[128006]`
 
@@ -60,7 +60,11 @@ This is an important concept: A model will never instinctively stop generating. 
 
 It's up to the tool that's being used to notice the `EOS` token (in Llama 3's case, it's actually one of 3 possible tokens, `<|end_of_text|>` with token ID `128001`, `<|eom_id|>` with token ID `128008`, and `<|eot_id|>` with token ID `128009`) and stop the model from generating so that the user can take over.
 
-The important thing is that the model must properly know how to tokenize this `EOS` token. There are times where the token is not properly tokenized as a single token (imagine the above situation with <span style="background-color: yellow;"><</span><span style="background-color: red;">|</span><span style="background-color: lightblue;">start</span><span style="background-color: lightgreen;">_header</span><span style="background-color: orange;">_id</span><span style="background-color: yellow;">|</span><span style="background-color: red;">></span>), and that will result in the model just endless generating, since nothing ever made it stop.
+The important thing is that the model must properly know how to tokenize this `EOS` token. There are times where the token is not properly tokenized as a single token:
+
+![image](https://github.com/user-attachments/assets/30ae46f4-01a8-4f04-ae68-82623aa490a6)
+
+and that will result in the model just endless generating, since nothing ever made it stop.
 
 There are other special tokens that are used in coding called `fill in middle` (FIM) tokens. These are used to indicate where a code snippet should be filled in. They'll look like `<|fim_prefix|>`, `<|fim_middle|>`, and `<|fim_suffix|>` for example.
 
