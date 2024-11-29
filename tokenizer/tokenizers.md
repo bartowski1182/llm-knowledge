@@ -3,7 +3,7 @@
 Tokenizers are how a model takes text and transforms them into `tokens` that it's capable of understanding.
 
 ### What is a token?
-At its most basic form, a `token` is simply a way for a model to represent a portion of text (or video/audio in multimodal models).
+At its most basic form, a `token` is simply a way for a model to represent a portion of text (or image/video/audio in multimodal models).
 
 A model will learn which tokens it should put into its vocabulary during training, and some like chat tokens are trained purposefully.
 
