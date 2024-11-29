@@ -6,14 +6,14 @@ Here I will document a bunch of my knowledge of language models so that it can b
 I'll break it up into sections to keep stuff organized.
 
 1. [Quantization](./quantization/quantization.md)
-       - [Precision and Memory Usage](./quantization/quantization.md#precision-and-memory-usage)
-       - [Basic Quantization Concepts](./quantization/quantization.md#basic-quantization-concepts)
-       - [GGUF Quantization Techniques](./quantization/quantization.md#gguf-quantization-techniques)
-       - [Imatrix](./quantization/quantization.md#imatrix-enhancement)
+      - [Precision and Memory Usage](./quantization/quantization.md#precision-and-memory-usage)
+      - [Basic Quantization Concepts](./quantization/quantization.md#basic-quantization-concepts)
+      - [GGUF Quantization Techniques](./quantization/quantization.md#gguf-quantization-techniques)
+      - [Imatrix](./quantization/quantization.md#imatrix-enhancement)
 2. [Tokenizers](./tokenizer/tokenizers.md)
-       - [What is a token?](./tokenizer/tokenizers.md#what-is-a-token)
-       - [Special tokens](./tokenizer/tokenizers.md#special-tokens)
-       - [Chat templates](./tokenizer/tokenizers.md#chat-templates)
+      - [What is a token?](./tokenizer/tokenizers.md#what-is-a-token)
+      - [Special tokens](./tokenizer/tokenizers.md#special-tokens)
+      - [Chat templates](./tokenizer/tokenizers.md#chat-templates)
 
 ## What's next
 
