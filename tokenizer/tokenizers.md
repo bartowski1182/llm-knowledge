@@ -46,7 +46,7 @@ And as IDs:
 
 `[27, 91, 2527, 8932, 851, 91]`
 
-But as soon as you add the final `>`, suddenly it recognizes that series of chatacters as a specific token that the model has been trained on:
+But as soon as you add the final `>`, suddenly it recognizes that series of characters as a specific token that the model has been trained on:
 
 ![image](https://github.com/user-attachments/assets/d3dd9423-8d6f-4830-8cbe-0c99aa859a05)
 
@@ -65,8 +65,6 @@ The important thing is that the model must properly know how to tokenize this `E
 ![image](https://github.com/user-attachments/assets/30ae46f4-01a8-4f04-ae68-82623aa490a6)
 
 and that will result in the model just endless generating, since nothing ever made it stop.
-
-There are other special tokens that are used in coding called `fill in middle` (FIM) tokens. These are used to indicate where a code snippet should be filled in. They'll look like `<|fim_prefix|>`, `<|fim_middle|>`, and `<|fim_suffix|>` for example.
 
 ## Chat templates
 The last thing I want to touch on for tokenizers is the concept of chat templates.
@@ -128,7 +126,20 @@ Now, I'll go through a couple examples of popular models.
 First, Llama 3 (not 3.1, since it got more complicated with tool use):
 
 ```
-"{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}"
+{%- set loop_messages = messages -%}
+{%- for message in loop_messages -%}
+    {%- set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n' + 
+                      message['content'] | trim + 
+                      '<|eot_id|>' -%}
+    {%- if loop.index0 == 0 -%}
+        {%- set content = bos_token + content -%}
+    {%- endif -%}
+    {{- content -}}
+{%- endfor -%}
+
+{%- if add_generation_prompt -%}
+    {{- '<|start_header_id|>assistant<|end_header_id|>\n\n' -}}
+{%- endif -%}
 ```
 
 Okay so this still looks pretty complex, let's break it down.
@@ -161,7 +172,26 @@ Let's look at another example.
 Here's how Gemma 2's template looks:
 
 ```
-"{{ bos_token }}{% if messages[0]['role'] == 'system' %}{{ raise_exception('System role not supported') }}{% endif %}{% for message in messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if (message['role'] == 'assistant') %}{% set role = 'model' %}{% else %}{% set role = message['role'] %}{% endif %}{{ '<start_of_turn>' + role + '\n' + message['content'] | trim + '<end_of_turn>\n' }}{% endfor %}{% if add_generation_prompt %}{{'<start_of_turn>model\n'}}{% endif %}"
+{{- bos_token -}}
+{%- if messages[0]['role'] == 'system' -%}
+    {{- raise_exception('System role not supported') -}}
+{%- endif -%}
+{%- for message in messages -%}
+    {%- if (message['role'] == 'user') != (loop.index0 % 2 == 0) -%}
+        {{- raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') -}}
+    {%- endif -%}
+    {%- if (message['role'] == 'assistant') -%}
+        {%- set role = 'model' -%}
+    {%- else -%}
+        {%- set role = message['role'] -%}
+    {%- endif -%}
+    {{- '<start_of_turn>' + role + '\n' + 
+        message['content'] | trim + 
+        '<end_of_turn>\n' -}}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+    {{- '<start_of_turn>model\n' -}}
+{%- endif -%}
 ```
 
 Let's break this down..
